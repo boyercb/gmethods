@@ -813,7 +813,7 @@ draw_zeroinfl_poisson <- function(N, size, fit, data) {
   nonzero <- draw_binomial(
     N = N,
     size = size,
-    p.fit = pscl:::predict.hurdle(fit, type = "zero"),
+    p.fit = pscl:::predict.hurdle(fit, type = "zero", newdata = data),
     data = data
   )
 
@@ -830,15 +830,14 @@ draw_zeroinfl_negbin <- function(N, size, fit, data) {
   nonzero <- draw_binomial(
     N = N,
     size = size,
-    p.fit = pscl:::predict.hurdle(fit, type = "zero"),
+    p.fit = pscl:::predict.hurdle(fit, type = "zero", newdata = data),
     data = data
   )
 
   response <- rnbinom(
     n = N,
-    mu = pscl:::predict.hurdle(fit, type = "count"),
-    size = fit$theta,
-    data = data
+    mu = pscl:::predict.hurdle(fit, type = "count", newdata = data),
+    size = fit$theta
   )
 
   nonzero * response
@@ -850,14 +849,13 @@ draw_poisson_hurdle <- function(N, size, fit, data) {
   nonzero <- draw_binomial(
     N = N,
     size = size,
-    p.fit = pscl:::predict.hurdle(fit, type = "zero"),
+    p.fit = pscl:::predict.hurdle(fit, type = "zero", newdata = data),
     data = data
   )
 
   response <- draw_trunc_poisson(
     N = N,
-    lambda = pscl:::predict.hurdle(fit, type = "count"),
-    data = data
+    lambda = pscl:::predict.hurdle(fit, type = "count", newdata = data)
   )
 
   nonzero * response
@@ -867,15 +865,14 @@ draw_negbin_hurdle <- function(N, size, fit, data) {
   nonzero <- draw_binomial(
     N = N,
     size = size,
-    p.fit = pscl:::predict.hurdle(fit, type = "zero"),
+    p.fit = pscl:::predict.hurdle(fit, type = "zero", newdata = data),
     data = data
   )
 
   response <- draw_trunc_negbin(
     N = N,
-    mu = pscl:::predict.hurdle(fit, type = "count"),
-    size = fit$theta,
-    data = data
+    lambda = pscl:::predict.hurdle(fit, type = "count", newdata = data),
+    size = fit$theta
   )
 
   nonzero * response
