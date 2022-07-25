@@ -85,6 +85,33 @@ gformula <- function(outcome_model,
     stop_time <- max(unique(data[[time]]))
   }
 
+  # add restrictions implied by visit process to covariate models
+  if (!is.null(visit_model)) {
+    f <- visit_model$formula
+    visit <- all.vars(f)[attr(terms(f), "response")]
+
+    # if user specifies covariates affected by visit process use those
+    if (exists(visit_model, x = "covariates")) {
+      visit_covs <- visit_model$covariates
+
+      # otherwise assume all covariates are affected
+    } else {
+      visit_covs <- names(covariate_model)
+    }
+
+    covariate_model[names(covariate_model) %in% visit_covs] <-
+      lapply(
+        covariate_model[names(covariate_model) %in% visit_covs],
+        function(object) {
+          object$restrict <- list(
+            subset = paste0(visit, " == 1")
+          )
+          return(object)
+      })
+  } else {
+    visit_covs <- NULL
+  }
+
   # get covariate restrictions
   restrictions <- lapply(covariate_model, function(object) {
     if (exists(object, x = "restrict")) {
@@ -93,6 +120,8 @@ gformula <- function(outcome_model,
       NULL
     }
   })
+
+
 
   # get list of all covariates that appear in model formulas (both dependent and
   # independent)
@@ -189,6 +218,7 @@ gformula <- function(outcome_model,
     survival = survival,
     censor_compevent = censor_compevent,
     max_visits = max_visits,
+    visit_covs = visit_covs,
     covs_baseline = covs_baseline,
     covs_tv = covs_tv,
     lagged_histories = lagged_histories,
@@ -207,7 +237,12 @@ gformula <- function(outcome_model,
 #' @description
 #' to approximate summation/integration over covariate history in g-formula
 #'
-#' @param gformula A g-formula object containing fitted models.
+#' @param object A g-formula object containing fitted models.
+#' @param nsim Number of monte carlo samples to use to simulate histories.
+#'   Integer. Defaults to number of unique IDs in either original data set or
+#'   `newdata`.
+#' @param seed Starting seed for random number generation. Integer.
+#'   Default is runif(1, 0,  .Machine$integer.max).
 #' @param newdata A data.frame or matrix object containing new data to use for
 #'   simulation. Default is to use same dataset used to fit models. Useful for
 #'   generalizing or transporting results to a target population under
@@ -225,12 +260,13 @@ gformula <- function(outcome_model,
 #' @param stop_time End of follow up time for simulation. Integer or scalar.
 #'   Could be different than that specified during model fitting. Default is
 #'   time specified in `gformula` fit.
-#' @param seed Starting seed for random number generation.
 #' @param bound_sims Should covariate simulations be restricted to the range of
-#'   the observed data? Boolean. Defaults to FALSE.
+#'   the observed data? Boolean. Defaults to TRUE.
 #' @param return_sims Flag for whether to return simulated covariate histories
 #'   for each sample. Boolean. Defaults to FALSE.
-#' @param natural_course
+#' @param natural_course Flag for whether to automatically add natural course to
+#'   the list of interventions specified in `interventions`. Boolean. Defaults
+#'   to TRUE.
 #' @param conf_level A scalar specifying the confidence level for bootstrapped
 #'   intervals in output.
 #' @param conf_type A string specifying the type of bootstrap confidence
@@ -241,7 +277,9 @@ gformula <- function(outcome_model,
 #' @export
 #'
 #' @examples
-simulate.gformula <- function(gformula,
+simulate.gformula <- function(object,
+                              nsim = NULL,
+                              seed = runif(1, 0, .Machine$integer.max),
                               newdata = NULL,
                               interventions = NULL,
                               reference = "Natural course",
@@ -249,12 +287,12 @@ simulate.gformula <- function(gformula,
                               n_boots = NULL,
                               start_time = NULL,
                               stop_time = NULL,
-                              seed = runif(1, 0, .Machine$integer.max),
-                              bound_sims = FALSE,
+                              bound_sims = TRUE,
                               return_sims = FALSE,
                               natural_course = TRUE,
                               conf_level = 0.95,
-                              conf_type = "norm") {
+                              conf_type = "norm",
+                              ...) {
   set.seed(seed)
 
   # add natural course to intervention list
@@ -272,11 +310,11 @@ simulate.gformula <- function(gformula,
 
   # update start and stop time
   if (is.null(start_time)) {
-    start_time <- gformula$start_time
+    start_time <- object$start_time
   }
 
   if (is.null(stop_time)) {
-    stop_time <- gformula$stop_time
+    stop_time <- object$stop_time
   }
 
   if (!reference %in% names(interventions)) {
@@ -284,7 +322,7 @@ simulate.gformula <- function(gformula,
   }
 
   res <- run_gformula(
-    gformula = gformula,
+    gformula = object,
     newdata = newdata,
     interventions = interventions,
     n_sims = 1,
@@ -308,7 +346,7 @@ simulate.gformula <- function(gformula,
   t0 <- res$t0
   t <- res$t
 
-  target <- switch(gformula$fit$outcome$type,
+  target <- switch(object$fit$outcome$type,
     "survival" = "poprisk",
     "continuous" = "Ey",
     "binomial" = "Py"
@@ -316,7 +354,7 @@ simulate.gformula <- function(gformula,
 
   # if there are bootstrap estimates
   if (!is.null(n_boots)) {
-    if (gformula$fit$outcome$type == "survival") {
+    if (object$fit$outcome$type == "survival") {
       # take only last time point for summary
       means <- lapply(boots$means, function(x) x[nrow(x), ])
       t0 <- lapply(t0$means, function(x) x[length(x), ][[target]])
@@ -331,9 +369,9 @@ simulate.gformula <- function(gformula,
     cov_means <- boots$covs
 
     means <- do.call("rbind", means)
-    means[[gformula$time]] <- NULL
+    means[[object$time]] <- NULL
   } else {
-    if (gformula$fit$outcome$type == "survival") {
+    if (object$fit$outcome$type == "survival") {
       means <- lapply(out_means, function(x) x[nrow(x), ])
     } else {
       means <- out_means
@@ -343,7 +381,7 @@ simulate.gformula <- function(gformula,
 
     # add NAs for confidence limits
     means <- cbind(means, NA, NA)
-    means[[gformula$time]] <- NULL
+    means[[object$time]] <- NULL
     colnames(means) <- c("estimate", "conf.low", "conf.high")
   }
 
@@ -394,15 +432,15 @@ simulate.gformula <- function(gformula,
   ratios[ref, 2:4] <- NA
 
   np_means <- calc_np_means(
-    outcome_fit = gformula$fit$outcome,
-    covariate_fit = gformula$fit$covariate,
-    compevent_fit = gformula$fit$compevent,
-    censor_fit = gformula$fit$censor,
-    visit_fit = gformula$fit$visit,
-    data = if (!is.null(newdata)) newdata else gformula$data,
-    id = gformula$id,
-    time = gformula$time,
-    censor_compevent = gformula$censor_compevent,
+    outcome_fit = object$fit$outcome,
+    covariate_fit = object$fit$covariate,
+    compevent_fit = object$fit$compevent,
+    censor_fit = object$fit$censor,
+    visit_fit = object$fit$visit,
+    data = if (!is.null(newdata)) newdata else object$data,
+    id = object$id,
+    time = object$time,
+    censor_compevent = object$censor_compevent,
     stop_time = stop_time
   )
 
@@ -421,13 +459,13 @@ simulate.gformula <- function(gformula,
     cov_means = lapply(cov_means, as.data.frame),
     np_means = np_means,
     interventions = interventions,
-    type = gformula$fit$outcome$type,
+    type = object$fit$outcome$type,
     reference = reference,
-    id = gformula$id,
-    time = gformula$time,
+    id = object$id,
+    time = object$time,
     start_time = start_time,
     stop_time = stop_time,
-    n_obs = gformula$n_obs,
+    n_obs = object$n_obs,
     n_samples = n_samples,
     n_boots = n_boots,
     conf_level = conf_level
@@ -445,7 +483,7 @@ simulate.gformula <- function(gformula,
 #' @description
 #' TBD.
 #'
-#' @param gformula A g-formula object containing fitted models.
+#' @param object A g-formula object containing fitted models.
 #' @param newdata A data.frame or matrix object containing new data to use for
 #'   simulation. Default is to use same dataset used to fit models. Useful for
 #'   making out-of-sample predictions.
@@ -482,7 +520,7 @@ simulate.gformula <- function(gformula,
 #' @export
 #'
 #' @examples
-predict.gformula <- function(gformula,
+predict.gformula <- function(object,
                              newdata = NULL,
                              interventions = NULL,
                              n_sims = 100,
@@ -490,22 +528,23 @@ predict.gformula <- function(gformula,
                              start_time = NULL,
                              stop_time = NULL,
                              seed = runif(1, 0, .Machine$integer.max),
-                             bound_sims = FALSE,
+                             bound_sims = TRUE,
                              return_sims = FALSE,
                              natural_course = TRUE,
                              last_only = TRUE,
                              predict_covs = FALSE,
                              conf_level = 0.95,
-                             conf_type = "norm") {
+                             conf_type = "norm",
+                             ...) {
   set.seed(seed)
 
   # update start and stop time
   if (is.null(start_time)) {
-    start_time <- gformula$start_time
+    start_time <- object$start_time
   }
 
   if (is.null(stop_time)) {
-    stop_time <- gformula$stop_time
+    stop_time <- object$stop_time
   }
 
   # add natural course to intervention list
@@ -524,7 +563,7 @@ predict.gformula <- function(gformula,
   }
 
   res <- run_gformula(
-    gformula = gformula,
+    gformula = object,
     newdata = newdata,
     interventions = interventions,
     n_sims = n_sims,
@@ -551,7 +590,7 @@ predict.gformula <- function(gformula,
   if (predict_covs) {
     # join on id, time
     preds <- lapply(seq_along(covs), function(i) {
-      preds[[i]][covs[[i]], on = c(gformula$id, gformula$time)]
+      preds[[i]][covs[[i]], on = c(object$id, object$time)]
     })
 
     names(preds) <- names(covs)
@@ -579,7 +618,7 @@ predict.gformula <- function(gformula,
 
 
 #' @export
-print.gformula.simulation <- function(x) {
+print.gformula.simulation <- function(x, ...) {
   if (!inherits(x, "gformula.simulation")) {
     stop("Argument 'x' must be an object of class \"gformula.simulation\".")
   }
@@ -753,7 +792,7 @@ print.gformula.simulation <- function(x) {
 
 
 #' @export
-summary.gformula <- function(x) {
+summary.gformula <- function(object, ...) {
   if (!inherits(object, "gformula")){
     stop("Argument 'object' must be an object of class \"gformula\".")
   }
@@ -762,7 +801,7 @@ summary.gformula <- function(x) {
 }
 
 #' @export
-summary.gformula.simulation <- function(x) {
+summary.gformula.simulation <- function(object, ...) {
   if (!inherits(object, "gformula.simulation")){
     stop("Argument 'object' must be an object of class \"gformula.simulation\".")
   }
@@ -771,12 +810,12 @@ summary.gformula.simulation <- function(x) {
 }
 
 #' @export
-plot.gformula <- function(x) {
+plot.gformula <- function(x, ...) {
 
 }
 
 #' @export
-plot.gformula.simulation <- function(x) {
+plot.gformula.simulation <- function(x, ...) {
 
 }
 
@@ -861,12 +900,27 @@ run_gformula <- function (
     interventions <- list(interventions)
   }
 
+  types <- lapply(covariate_fit, get, x = "type")
 
   if (bound_sims) {
     # Determine ranges of observed covariates and outcome
-    covariate_range <- lapply(covs, function(x) range(data[[x]], na.rm = TRUE))
+    covariate_range <- lapply(seq_along(covs), function(i) {
+      if (types[i] %in% c('normal',
+                          'bounded normal',
+                          'truncated normal',
+                          'zero-inflated normal',
+                          'poisson',
+                          'zero-inflated poisson',
+                          'zero-inflated negbin',
+                          'poisson hurdle',
+                          'negbin hurdle'
+      )) {
+        range(data[[covs[i]]], na.rm = TRUE)
+      } else {
+        NULL
+      }
+    })
     outcome_range <- range(data[[outcome]], na.rm = TRUE)
-
 
     if (!is.null(compevent_fit)) {
       compevent_range <- range(data[[compevent]])
@@ -879,6 +933,7 @@ run_gformula <- function (
     compevent_range <- NULL
   }
 
+  visit_covs <- gformula$visit_covs
 
   # initialize data for data.table
   dt <- data[data[[time]] == start_time, ]
@@ -931,6 +986,7 @@ run_gformula <- function (
           compevent_fit,
           censor_fit,
           visit_fit,
+          visit_covs,
           lagged_histories,
           cumulative_histories,
           covariate_range,
@@ -1034,6 +1090,7 @@ run_gformula <- function (
 #' @param compevent_fit
 #' @param censor_fit
 #' @param visit_fit
+#' @param visit_covs
 #' @param lagged_histories
 #' @param cumulative_histories
 #' @param covariate_range
@@ -1060,6 +1117,7 @@ simulate_intervention <-
            compevent_fit,
            censor_fit,
            visit_fit,
+           visit_covs,
            lagged_histories,
            cumulative_histories,
            covariate_range,
@@ -1108,6 +1166,7 @@ simulate_intervention <-
         # update lags in covariate histories
         update_lagged_histories(sim, lagged_histories)
 
+        # if visit model specified determine whether visit occurs
         if (!is.null(visit_fit)) {
           set(
             sim,
@@ -1119,16 +1178,23 @@ simulate_intervention <-
               data = sim
             )
           )
-
-          visit_rows <- which(sim[[visit]] == 1)
-          ndraws <- length(visit_rows)
-        } else {
-          visit_rows <- NULL
-          ndraws <- nsims
         }
 
         # draw new covariate values
         for (j in seq_along(covs)) {
+
+          # visit process variables, default is to draw values for everyone
+          visit_rows <- 1:nrow(sim)
+          ndraws <- nsims
+
+          # if covariate is part of visit process draw values only at visits
+          if (!is.null(visit_fit)) {
+            if (!covs[[j]] %in% visit_covs) {
+              visit_rows <- which(sim[[visit]] == 1)
+              ndraws <- length(visit_rows)
+            }
+          }
+
           if (types[[j]] == "binomial") {
             set(
               sim,
@@ -1138,7 +1204,7 @@ simulate_intervention <-
                 N = ndraws,
                 size = 1,
                 p.fit = covariate_fit[[j]],
-                data = sim
+                data = sim[visit_rows, ]
               )
             )
           } else if (types[[j]] == 'normal') {
@@ -1150,7 +1216,7 @@ simulate_intervention <-
                 N = ndraws,
                 mu.fit = covariate_fit[[j]],
                 sd.hat = rmses[[j]],
-                data = sim
+                data = sim[visit_rows, ]
               ))
 
           } else if (types[[j]] == 'poisson') {
@@ -1161,7 +1227,7 @@ simulate_intervention <-
               value = draw_poisson(
                 N = ndraws,
                 lambda.fit = covariate_fit[[j]],
-                data = sim
+                data = sim[visit_rows, ]
               ))
           } else if (types[[j]] == 'categorical') {
             set(
@@ -1170,7 +1236,7 @@ simulate_intervention <-
               j = covs[[j]],
               value = draw_multinomial(
                 p.fit = covariate_fit[[j]],
-                data = sim
+                data = sim[visit_rows, ]
               ))
           } else if (types[[j]] == 'zero-inflated normal') {
             set(
@@ -1183,7 +1249,7 @@ simulate_intervention <-
                 p.fit = covariate_fit[[j]]$fits$zero,
                 mu.fit = covariate_fit[[j]]$fits$normal,
                 sd.hat = rmses[[j]],
-                data = sim
+                data = sim[visit_rows, ]
               ))
           } else if (types[[j]] == 'zero-inflated poisson') {
             set(
@@ -1194,7 +1260,7 @@ simulate_intervention <-
                 N = ndraws,
                 size = 1,
                 fit = covariate_fit[[j]],
-                data = sim
+                data = sim[visit_rows, ]
               ))
           } else if (types[[j]] == 'zero-inflated negbin') {
             set(
@@ -1205,7 +1271,7 @@ simulate_intervention <-
                 N = ndraws,
                 size = 1,
                 fit = covariate_fit[[j]],
-                data = sim
+                data = sim[visit_rows, ]
               ))
           } else if (types[[j]] == 'poisson hurdle') {
             set(
@@ -1216,7 +1282,7 @@ simulate_intervention <-
                 N = ndraws,
                 size = 1,
                 fit = covariate_fit[[j]],
-                data = sim
+                data = sim[visit_rows, ]
               ))
           } else if (types[[j]] == 'negbin hurdle') {
             set(
@@ -1227,7 +1293,7 @@ simulate_intervention <-
                 N = ndraws,
                 size = 1,
                 fit = covariate_fit[[j]],
-                data = sim
+                data = sim[visit_rows, ]
               ))
           } else if (types[[j]] == 'bounded normal') {
             set(
@@ -1238,8 +1304,8 @@ simulate_intervention <-
                 N = ndraws,
                 mu.fit = covariate_fit[[j]],
                 sd.hat = rmses[[j]],
-                range = c(min(sim[[covs[i]]]), max(sim[[covs[i]]])),
-                data = sim
+                range = covariate_range[[j]],
+                data = sim[visit_rows, ]
               ))
           } else if (types[[j]] == 'truncated normal') {
             set(
@@ -1252,7 +1318,7 @@ simulate_intervention <-
                 sd.hat = rmses[[j]],
                 direction = covariate_fit[[j]]$direction,
                 point = covariate_fit[[j]]$point,
-                data = sim
+                data = sim[visit_rows, ]
               ))
           } else if (types[[j]] == 'binomial grf') {
             set(
@@ -1263,7 +1329,7 @@ simulate_intervention <-
                 N = ndraws,
                 size = 1,
                 p.fit = covariate_fit[[j]],
-                data = sim[, covariate_fit[[j]]$covs]
+                data = sim[visit_rows, covariate_fit[[j]]$covs]
               ))
           } else if (types[[j]] == 'normal grf') {
             set(
@@ -1274,7 +1340,7 @@ simulate_intervention <-
                 N = ndraws,
                 mu.fit = covariate_fit[[j]],
                 sd.hat = rmses[[j]],
-                data = sim[, covariate_fit[[j]]$covs]
+                data = sim[visit_rows, covariate_fit[[j]]$covs]
               ))
           } else if (types[[j]] == 'custom') {
             set(
@@ -1285,7 +1351,7 @@ simulate_intervention <-
                 N = ndraws,
                 mu.fit = covariate_fit[[j]],
                 sd.hat = rmses[[j]],
-                data = sim,
+                data = sim[visit_rows, ],
                 pred.fun = custom.pred.fun
               ))
           }
@@ -1302,7 +1368,13 @@ simulate_intervention <-
                     (covs[j]) := covariate_range[[j]][2]]
               }
 
-            } else if (types[[j]] == 'zero-inflated normal') {
+            } else if (types[[j]] %in% c(
+              'zero-inflated normal',
+              'zero-inflated poisson',
+              'zero-inflated negbin',
+              'poisson hurdle',
+              'negbin hurdle'
+            )) {
               if (min(sim[[covs[j]]]) < covariate_range[[j]][1]) {
                 sim[sim[[covs[j]]] < covariate_range[[j]][1] &
                       sim[[covs[j]]] > 0, (covs[j]) := covariate_range[[j]][1]]
@@ -1316,8 +1388,10 @@ simulate_intervention <-
 
           # restrictions
           if (!is.null(restrictions[[j]])) {
-            rows <- with(sim, !eval(parse(text = restrictions[[j]]$subset)))
-            sim[[covs[j]]][rows] <- restrictions[[j]]$otherwise
+            if (exists(restrictions[[j]], x = "otherwise")) {
+              rows <- with(sim, !eval(parse(text = restrictions[[j]]$subset)))
+              sim[[covs[j]]][rows] <- restrictions[[j]]$otherwise
+            }
           }
 
           # if covariate is part of cumulative history update

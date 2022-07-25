@@ -294,7 +294,7 @@ fit_zeroinfl_count <- function(formula, family, link, data, control = NULL) {
 fit_bounded_continuous <- function(formula, link = NULL, data, control = NULL) {
 
   cov.name <- all.vars(update(formula, . ~ 1))
-  print(formula)
+
   data[, paste("norm_", cov.name, sep = "")] <-
     (data[[cov.name]] - min(data[[cov.name]])) /
     (max(data[[cov.name]]) - min(data[[cov.name]]))
@@ -842,8 +842,6 @@ draw_zeroinfl_negbin <- function(N, size, fit, data) {
 
   nonzero * response
 }
-
-
 
 draw_poisson_hurdle <- function(N, size, fit, data) {
   nonzero <- draw_binomial(
