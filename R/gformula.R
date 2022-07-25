@@ -924,15 +924,15 @@ run_gformula <- function (
                           'poisson hurdle',
                           'negbin hurdle'
       )) {
-        range(data[[covs[i]]], na.rm = TRUE)
+        range(gformula$data[[covs[i]]], na.rm = TRUE)
       } else {
         NULL
       }
     })
-    outcome_range <- range(data[[outcome]], na.rm = TRUE)
+    outcome_range <- range(gformula$data[[outcome]], na.rm = TRUE)
 
     if (!is.null(compevent_fit)) {
-      compevent_range <- range(data[[compevent]])
+      compevent_range <- range(gformula$data[[compevent]])
     } else {
       compevent_range <- NULL
     }
