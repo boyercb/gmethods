@@ -596,7 +596,16 @@ predict.gformula <- function(object,
     names(preds) <- names(covs)
   }
 
-  class(preds) <- "gformula.prediction"
+  # convert to data.frame
+  preds <- lapply(preds, as.data.frame)
+
+  if (length(preds) == 1) {
+    preds <- preds[[1]]
+  } else {
+    class(preds) <- "gformula.prediction"
+
+  }
+
   return(preds)
 }
 
