@@ -4,7 +4,7 @@
 \alias{fit_covariate_model}
 \title{Fit Covariate Models}
 \usage{
-fit_covariate_model(models, data, time = "time", start_time = 0, gam = FALSE)
+fit_covariate_model(model, data, time = "time", start_time = 0, gam = FALSE)
 }
 \arguments{
 \item{data}{}

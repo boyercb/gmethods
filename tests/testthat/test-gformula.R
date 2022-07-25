@@ -2,7 +2,7 @@
 #   stop("This test uses \"gfoRmula\" package.")
 # }
 
-library(gfoRmula, exclude = c("summary", "gformula"))
+library(gfoRmula, exclude = c("gformula"), warn.conflicts = FALSE)
 
 # scenario 1 --------------------------------------------------------------
 
@@ -79,7 +79,7 @@ gf <- gformula(
 )
 
 s <- simulate(
-  gformula = gf,
+  gf,
   interventions = list(
     "Never treat" = function(data, time) set(data, j = "A", value = 0),
     "Always treat" = function(data, time) set(data, j = "A", value = 1)
@@ -235,7 +235,7 @@ gf <- gformula(
 )
 
 s <- simulate(
-  gf = gf,
+  gf,
   interventions = list(
     "Never treat" = function(data, time) set(data, j = "A", value = 0),
     "Always treat" = function(data, time) set(data, j = "A", value = 1)
@@ -366,7 +366,7 @@ gf <- gformula(
 )
 
 s <- simulate(
-  gf = gf,
+  gf,
   interventions = NULL
 )
 
@@ -457,7 +457,7 @@ intvars <- list('A', 'A')
 interventions <- list(list(c(static, rep(0, 7))),
                       list(c(static, rep(1, 7))))
 int_descript <- c('Never treat', 'Always treat')
-nsimul <- 10000
+nsimul <- 50000
 
 gform_cont_eof <- gformula_continuous_eof(obs_data = continuous_eofdata,
                                           id = id,
@@ -507,12 +507,12 @@ gf <- gformula(
 )
 
 s <- simulate(
-  gformula = gf,
+  gf,
   interventions = list(
     "Never treat" = function(data, time) set(data, j = "A", value = 0),
     "Always treat" = function(data, time) set(data, j = "A", value = 1)
   ),
-  n_samples = 100000
+  n_samples = 50000
 )
 
 
@@ -573,7 +573,7 @@ test_that("scenario 4: results are close", {
   expect_equal(
     result_new$diffs$estimate,
     result_old$`Mean difference`,
-    tolerance = 0.02
+    tolerance = 0.03
   )
 })
 
@@ -659,7 +659,7 @@ gf <- gformula(
 )
 
 s <- simulate(
-  gformula = gf,
+  gf,
   interventions = list(
     "Never treat" = function(data, time) set(data, j = "treat", value = 0),
     "Threshold - lower bound 1" = function(data, time)

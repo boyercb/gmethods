@@ -17,6 +17,7 @@ gformula(
   stop_time = NULL,
   survival = FALSE,
   censor_compevent = TRUE,
+  max_visits = Inf,
   covs_baseline = NULL,
   covs_tv = NULL
 )
@@ -57,6 +58,9 @@ Default is FALSE.}
 \item{censor_compevent}{Flag for whether competing events should be treated
 as censoring events (i.e. part of C) or modeled (i.e. part of L). Boolean.
 Only implemented for survival models. Default is TRUE.}
+
+\item{max_visits}{If visit model specified, max number of missed visits
+before censoring (in model fit) or forcing visit (in simulation).}
 
 \item{covs_baseline}{Names of time-fixed baseline covariates. Either a
 character vector or something coercible to one.}

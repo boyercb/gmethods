@@ -4,7 +4,7 @@
 \alias{print.gformula.simulation}
 \title{Title}
 \usage{
-\method{print}{gformula.simulation}(x)
+\method{print}{gformula.simulation}(x, ...)
 }
 \arguments{
 \item{x}{}

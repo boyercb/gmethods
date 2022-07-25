@@ -15,6 +15,8 @@ simulate_intervention(
   covariate_fit,
   compevent_fit,
   censor_fit,
+  visit_fit,
+  visit_covs,
   lagged_histories,
   cumulative_histories,
   covariate_range,

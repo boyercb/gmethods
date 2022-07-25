@@ -2,28 +2,73 @@
 % Please edit documentation in R/gformula.R
 \name{predict.gformula}
 \alias{predict.gformula}
-\title{Predict conditional expectations under time-varying interventions using the
-g-formula}
+\title{Predict conditional expectation for specified covariate profile under
+time-varying interventions using the g-formula}
 \usage{
 \method{predict}{gformula}(
-  gformula,
+  object,
   newdata = NULL,
   interventions = NULL,
-  n_sims = NULL,
+  n_sims = 100,
   n_boots = NULL,
   start_time = NULL,
   stop_time = NULL,
   seed = runif(1, 0, .Machine$integer.max),
-  bound_sims = FALSE,
+  bound_sims = TRUE,
   return_sims = FALSE,
   natural_course = TRUE,
   last_only = TRUE,
+  predict_covs = FALSE,
   conf_level = 0.95,
-  conf_type = "norm"
+  conf_type = "norm",
+  ...
 )
 }
 \arguments{
-\item{conf_type}{}
+\item{object}{A g-formula object containing fitted models.}
+
+\item{newdata}{A data.frame or matrix object containing new data to use for
+simulation. Default is to use same dataset used to fit models. Useful for
+making out-of-sample predictions.}
+
+\item{interventions}{A list of time-varying interventions}
+
+\item{n_sims}{Number of monte carlo simulations PER individual. For example,
+for a dataset with 2000 unique individuals (as determined by identifier
+specified for \code{id}) an \code{n_sims} of 100 will perform 100 simulatios for
+each observation to generate an "individual" prediction.
+Integer. Defaults to 100.}
+
+\item{n_boots}{Number of bootstrap samples to draw. Integer. Defaults to \code{0}.}
+
+\item{start_time}{Start of follow up time for simulation. Integer or scalar.
+Could be different than that specified during model fitting. Default is
+time specified in \code{gformula} fit.}
+
+\item{stop_time}{End of follow up time for simulation. Integer or scalar.
+Could be different than that specified during model fitting. Default is
+time specified in \code{gformula} fit.}
+
+\item{seed}{Starting seed for random number generation.}
+
+\item{bound_sims}{Should covariate simulations be restricted to the range of
+the observed data? Boolean. Defaults to FALSE.}
+
+\item{return_sims}{Flag for whether to return simulated covariate histories
+for each sample. Boolean. Defaults to FALSE.}
+
+\item{last_only}{Flag for whether prediction should be for final time point
+only (Default) or should predictions at intermediate time points be
+included? Boolean. Most relevant for survival models.}
+
+\item{predict_covs}{Flag for whether covariate predictions should be included
+in output. Boolean. Default is False.}
+
+\item{conf_level}{A scalar specifying the confidence level for bootstrapped
+intervals in output.}
+
+\item{conf_type}{A string specifying the type of bootstrap confidence
+interval requested. One of "norm" or "perc".}
 }
 \description{
 TBD.

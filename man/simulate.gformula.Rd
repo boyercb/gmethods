@@ -6,7 +6,9 @@
 interventions using (parametric) g-formula}
 \usage{
 \method{simulate}{gformula}(
-  gformula,
+  object,
+  nsim = NULL,
+  seed = runif(1, 0, .Machine$integer.max),
   newdata = NULL,
   interventions = NULL,
   reference = "Natural course",
@@ -14,16 +16,23 @@ interventions using (parametric) g-formula}
   n_boots = NULL,
   start_time = NULL,
   stop_time = NULL,
-  seed = runif(1, 0, .Machine$integer.max),
-  bound_sims = FALSE,
+  bound_sims = TRUE,
   return_sims = FALSE,
   natural_course = TRUE,
   conf_level = 0.95,
-  conf_type = "norm"
+  conf_type = "norm",
+  ...
 )
 }
 \arguments{
-\item{gformula}{A g-formula object containing fitted models.}
+\item{object}{A g-formula object containing fitted models.}
+
+\item{nsim}{Number of monte carlo samples to use to simulate histories.
+Integer. Defaults to number of unique IDs in either original data set or
+\code{newdata}.}
+
+\item{seed}{Starting seed for random number generation. Integer.
+Default is runif(1, 0,  .Machine$integer.max).}
 
 \item{newdata}{A data.frame or matrix object containing new data to use for
 simulation. Default is to use same dataset used to fit models. Useful for
@@ -49,19 +58,24 @@ time specified in \code{gformula} fit.}
 Could be different than that specified during model fitting. Default is
 time specified in \code{gformula} fit.}
 
-\item{seed}{Starting seed for random number generation.}
-
 \item{bound_sims}{Should covariate simulations be restricted to the range of
-the observed data? Boolean. Defaults to FALSE.}
+the observed data? Boolean. Defaults to TRUE.}
 
 \item{return_sims}{Flag for whether to return simulated covariate histories
 for each sample. Boolean. Defaults to FALSE.}
+
+\item{natural_course}{Flag for whether to automatically add natural course to
+the list of interventions specified in \code{interventions}. Boolean. Defaults
+to TRUE.}
 
 \item{conf_level}{A scalar specifying the confidence level for bootstrapped
 intervals in output.}
 
 \item{conf_type}{A string specifying the type of bootstrap confidence
 interval requested. One of "norm" or "perc".}
+}
+\value{
+a gformula.simulation object with
 }
 \description{
 to approximate summation/integration over covariate history in g-formula
