@@ -148,7 +148,8 @@ gformula <- function(outcome_model,
   }
 
   # restrict to time range of interest
-  data <- data[data[[time]] >= start_time & data[[time]] <= stop_time, ]
+  rows <- which(data[[time]] >= start_time & data[[time]] <= stop_time)
+  data <- data[rows, ]
 
   # create and document any history variables
   if (any(grepl("(^lag[0-9]+_)|(cumavg_)|(cumsum_)", covs))) {
@@ -945,7 +946,8 @@ run_gformula <- function (
   visit_covs <- gformula$visit_covs
 
   # initialize data for data.table
-  dt <- data[data[[time]] == start_time, ]
+  rows <- which(data[[time]] == start_time)
+  dt <- data[rows, ]
 
   # add hidden ordering variable
   obs <- nrow(dt)
@@ -1554,7 +1556,8 @@ simulate_intervention <-
       }
 
       if (last_only) {
-        means <- means[means[[time]] == stop_time, ]
+        rows <- which(means[[time]] == stop_time)
+        means <- means[rows, ]
       }
     } else {
 
@@ -1566,10 +1569,12 @@ simulate_intervention <-
         means <- sims[, .(poprisk = mean(poprisk)), by = time]
       } else if (outcome_fit$type == 'continuous') {
         means <- sims[, .(Ey = mean(Ey)), by = time]
-        means <- means[means[[time]] == stop_time, ]
+        rows <- which(means[[time]] == stop_time)
+        means <- means[rows, ]
       } else if (outcome_fit$type == 'binomial') {
         means <- sims[, .(Py = mean(Py)), by = time]
-        means <- means[means[[time]] == stop_time, ]
+        rows <- which(means[[time]] == stop_time)
+        means <- means[rows, ]
       }
 
     }

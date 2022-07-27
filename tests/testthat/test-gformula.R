@@ -618,14 +618,10 @@ gform_bin_eof <- gformula_binary_eof(obs_data = binary_eofdata, id = id,
                                      histories = histories, histvars = histvars,
                                      basecovs = c("cov3"), seed = 152354,
                                      model_fits = TRUE, sim_data_b = TRUE,
-                                     nsimul = 100000)
+                                     nsimul = 10000)
 
 
 # # custom ----------------------------------------------------------------
-
-d <- binary_eofdata
-d[, t0 := time]
-d[, time := NULL]
 
 gf <- gformula(
   outcome_model = list(
@@ -635,27 +631,27 @@ gf <- gformula(
   ),
   covariate_model = list(
     "cov1" = list(
-      formula = cov1 ~ lag1_treat + lag1_cov1 + lag1_cov2 + cov3 + t0,
+      formula = cov1 ~ lag1_treat + lag1_cov1 + lag1_cov2 + cov3 + time,
       link = "logit",
       family = "binomial"
     ),
     "cov2" = list(
       formula = cov2 ~ lag1_treat + cov1 + lag1_cov1 + lag1_cov2 +
-        cov3 + t0,
+        cov3 + time,
       link = "identity",
       family = "zero-inflated normal"
     ),
     "treat" = list(
       formula = treat ~ lag1_treat + cumavg_cov1 + cumavg_cov2 +
-        cov3 + t0,
+        cov3 + time,
       link = "identity",
       family = "normal"
     )
   ),
-  data = d,
+  data = binary_eofdata,
   survival = FALSE,
   id = 'id_num',
-  time = 't0'
+  time = 'time'
 )
 
 s <- simulate(

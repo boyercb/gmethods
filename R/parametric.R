@@ -408,7 +408,8 @@ fit_trunc_normal <- function(formula, link = NULL, data, control = NULL, directi
 fit_covariate_model <- function(model, data, time = "time", start_time = 0, gam = FALSE) {
 
   # fit to all observations after baseline/start time
-  subdata <- data[data[[time]] > start_time, ]
+  rows <- which(data[[time]] > start_time)
+  subdata <- data[rows, ]
 
   if (!is.null(model$subset)) {
     subdata <- subset(subdata, eval(parse(text = model$subset)))
@@ -566,7 +567,8 @@ fit_outcome_model <- function(model, data, time = NULL, stop_time = NULL, surviv
     if (is.null(stop_time)) {
       stop("Must specify stop time for EOF.")
     }
-    data <- data[data[[time]] == stop_time, ]
+    rows <- which(data[[time]] == stop_time)
+    data <- data[rows, ]
   }
 
   if (gam) {
