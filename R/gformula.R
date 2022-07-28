@@ -1594,14 +1594,6 @@ simulate_intervention <-
 
     }
 
-    # flagged <- unique(
-    #   paste(
-    #     sims[is.na(sims[['treat']]) | is.na(sims[["cov1"]] | is.na(sims[["cov2"]])), ][['id_num']],
-    #     sims[is.na(sims[['treat']]) | is.na(sims[["cov1"]] | is.na(sims[["cov2"]])), ][['.sim']],
-    #     sep = "_"
-    #   )
-    # )
-    # print(sims[paste(sims$id_num, sims$.sim, sep = "_") %in% flagged, ])
     if (!return_sims) {
       sims <- NULL
     } else {
