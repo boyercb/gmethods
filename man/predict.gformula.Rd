@@ -16,9 +16,9 @@ time-varying interventions using the g-formula}
   seed = runif(1, 0, .Machine$integer.max),
   bound_sims = TRUE,
   return_sims = FALSE,
+  return_covs = FALSE,
   natural_course = TRUE,
   last_only = TRUE,
-  predict_covs = FALSE,
   conf_level = 0.95,
   conf_type = "norm",
   ...
@@ -57,12 +57,12 @@ the observed data? Boolean. Defaults to FALSE.}
 \item{return_sims}{Flag for whether to return simulated covariate histories
 for each sample. Boolean. Defaults to FALSE.}
 
+\item{return_covs}{Flag for whether covariate predictions should be included
+in output. Boolean. Default is False.}
+
 \item{last_only}{Flag for whether prediction should be for final time point
 only (Default) or should predictions at intermediate time points be
 included? Boolean. Most relevant for survival models.}
-
-\item{predict_covs}{Flag for whether covariate predictions should be included
-in output. Boolean. Default is False.}
 
 \item{conf_level}{A scalar specifying the confidence level for bootstrapped
 intervals in output.}

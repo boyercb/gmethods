@@ -18,6 +18,7 @@ interventions using (parametric) g-formula}
   stop_time = NULL,
   bound_sims = TRUE,
   return_sims = FALSE,
+  return_covs = TRUE,
   natural_course = TRUE,
   conf_level = 0.95,
   conf_type = "norm",
@@ -63,6 +64,9 @@ the observed data? Boolean. Defaults to TRUE.}
 
 \item{return_sims}{Flag for whether to return simulated covariate histories
 for each sample. Boolean. Defaults to FALSE.}
+
+\item{return_covs}{Flag for whether to return mean covariate trajectories.
+Boolean. Defaults to TRUE.}
 
 \item{natural_course}{Flag for whether to automatically add natural course to
 the list of interventions specified in \code{interventions}. Boolean. Defaults

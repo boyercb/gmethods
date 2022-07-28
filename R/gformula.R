@@ -265,6 +265,8 @@ gformula <- function(outcome_model,
 #'   the observed data? Boolean. Defaults to TRUE.
 #' @param return_sims Flag for whether to return simulated covariate histories
 #'   for each sample. Boolean. Defaults to FALSE.
+#' @param return_covs Flag for whether to return mean covariate trajectories.
+#' Boolean. Defaults to TRUE.
 #' @param natural_course Flag for whether to automatically add natural course to
 #'   the list of interventions specified in `interventions`. Boolean. Defaults
 #'   to TRUE.
@@ -290,6 +292,7 @@ simulate.gformula <- function(object,
                               stop_time = NULL,
                               bound_sims = TRUE,
                               return_sims = FALSE,
+                              return_covs = TRUE,
                               natural_course = TRUE,
                               conf_level = 0.95,
                               conf_type = "norm",
@@ -333,6 +336,7 @@ simulate.gformula <- function(object,
     stop_time = stop_time,
     bound_sims = bound_sims,
     return_sims = return_sims,
+    return_covs = return_covs,
     last_only = TRUE,
     natural_course = natural_course,
     conf_level = conf_level,
@@ -506,12 +510,12 @@ simulate.gformula <- function(object,
 #'   the observed data? Boolean. Defaults to FALSE.
 #' @param return_sims Flag for whether to return simulated covariate histories
 #'   for each sample. Boolean. Defaults to FALSE.
+#' @param return_covs Flag for whether covariate predictions should be included
+#'   in output. Boolean. Default is False.
 #' @param natural_course
 #' @param last_only Flag for whether prediction should be for final time point
 #'   only (Default) or should predictions at intermediate time points be
 #'   included? Boolean. Most relevant for survival models.
-#' @param predict_covs Flag for whether covariate predictions should be included
-#'   in output. Boolean. Default is False.
 #' @param conf_level A scalar specifying the confidence level for bootstrapped
 #'   intervals in output.
 #' @param conf_type A string specifying the type of bootstrap confidence
@@ -531,9 +535,9 @@ predict.gformula <- function(object,
                              seed = runif(1, 0, .Machine$integer.max),
                              bound_sims = TRUE,
                              return_sims = FALSE,
+                             return_covs = FALSE,
                              natural_course = TRUE,
                              last_only = TRUE,
-                             predict_covs = FALSE,
                              conf_level = 0.95,
                              conf_type = "norm",
                              ...) {
@@ -574,6 +578,7 @@ predict.gformula <- function(object,
     stop_time = stop_time,
     bound_sims = bound_sims,
     return_sims = return_sims,
+    return_covs = return_covs,
     last_only = last_only,
     natural_course = FALSE,
     conf_level = conf_level,
@@ -588,7 +593,7 @@ predict.gformula <- function(object,
     covs <- res$covs
   }
 
-  if (predict_covs) {
+  if (return_covs) {
     # join on id, time
     preds <- lapply(seq_along(covs), function(i) {
       preds[[i]][covs[[i]], on = c(object$id, object$time)]
@@ -844,6 +849,7 @@ plot.gformula.simulation <- function(x, ...) {
 #' @param stop_time
 #' @param bound_sims
 #' @param return_sims
+#' @param return_covs
 #' @param last_only
 #' @param natural_course
 #' @param conf_level
@@ -863,6 +869,7 @@ run_gformula <- function (
     stop_time = NULL,
     bound_sims = FALSE,
     return_sims = FALSE,
+    return_covs = TRUE,
     last_only = TRUE,
     natural_course = TRUE,
     conf_level = 0.95,
@@ -1006,6 +1013,7 @@ run_gformula <- function (
           restrictions,
           bound_sims,
           return_sims,
+          return_covs,
           last_only,
           prediction
         )
@@ -1110,6 +1118,7 @@ run_gformula <- function (
 #' @param restrictions
 #' @param bound_sims
 #' @param return_sims
+#' @param return_covs
 #' @param last_only
 #' @param prediction
 #'
@@ -1137,6 +1146,7 @@ simulate_intervention <-
            restrictions,
            bound_sims,
            return_sims,
+           return_covs,
            last_only,
            prediction) {
 
@@ -1543,7 +1553,11 @@ simulate_intervention <-
 
     if (prediction) {
       # calculate covariate means
-      covs <- calc_obs_cov_means(covariate_fit, sims, id, time, by = c(id))
+      if (return_covs) {
+        covs <- calc_obs_cov_means(covariate_fit, sims, id, time, by = c(id))
+      } else {
+        covs <- NULL
+      }
 
       # calculate predictions
       bylist <- c(id, time)
@@ -1562,7 +1576,11 @@ simulate_intervention <-
     } else {
 
       # calculate covariate means
-      covs <- calc_obs_cov_means(covariate_fit, sims, id, time)
+      if (return_covs) {
+        covs <- calc_obs_cov_means(covariate_fit, sims, id, time)
+      } else {
+        covs <- NULL
+      }
 
       # calculate outcome means
       if (outcome_fit$type == 'survival') {

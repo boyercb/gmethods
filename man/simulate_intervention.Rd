@@ -25,6 +25,7 @@ simulate_intervention(
   restrictions,
   bound_sims,
   return_sims,
+  return_covs,
   last_only,
   prediction
 )

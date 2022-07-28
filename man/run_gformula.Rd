@@ -15,6 +15,7 @@ run_gformula(
   stop_time = NULL,
   bound_sims = FALSE,
   return_sims = FALSE,
+  return_covs = TRUE,
   last_only = TRUE,
   natural_course = TRUE,
   conf_level = 0.95,
