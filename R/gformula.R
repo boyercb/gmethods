@@ -1548,9 +1548,6 @@ simulate_intervention <-
     # initialize weights (only observed are weighted)
     sims[, .w := 1]
 
-    # sort in proper order
-    setorderv(sims, c(id, '.sid', time, '.sim'))
-
     if (prediction) {
       # calculate covariate means
       if (return_covs) {
@@ -1607,6 +1604,9 @@ simulate_intervention <-
     # print(sims[paste(sims$id_num, sims$.sim, sep = "_") %in% flagged, ])
     if (!return_sims) {
       sims <- NULL
+    } else {
+      # sort in proper order
+      setorderv(sims, c(id, '.sid', time, '.sim'))
     }
 
     return(
