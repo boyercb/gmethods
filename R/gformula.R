@@ -1654,7 +1654,7 @@ bootstrap_simulations <- function (uids,
     outcome_model = gformula$outcome_model,
     covariate_model = gformula$covariate_model,
     compevent_model = gformula$compevent_model,
-    censor_model = gformula$censor_model,
+    censor_model = NULL, # not needed as not comparing anyway
     visit_model = gformula$visit_model,
     data = boot,
     id = gformula$id,
@@ -1662,10 +1662,12 @@ bootstrap_simulations <- function (uids,
     start_time = gformula$start_time,
     stop_time = gformula$stop_time,
     survival = gformula$survival,
+    censor_compevent = gformula$censor_compevent,
+    max_visits = gformula$max_visits,
     covs_baseline = gformula$covs_baseline,
     covs_tv = gformula$covs_tv
   )
-
+  print(bgf$fit)
   # re-simulate interventions
   sim_results <- run_gformula(
     gformula = bgf,
