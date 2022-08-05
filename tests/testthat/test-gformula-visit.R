@@ -12,7 +12,7 @@ library(readr)
 
 # gfoRmula package --------------------------------------------------------
 
-dat_weeks <- read_csv("practicum_data_weeks.csv", show_col_types = FALSE)
+dat_weeks <- read_csv("tests/testthat/practicum_data_weeks.csv", show_col_types = FALSE)
 
 id <- "id"
 time_name <- "week"
