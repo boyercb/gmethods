@@ -430,12 +430,15 @@ use_covs_key <- function(key, old, new, prediction) {
       # extract data to be bound
       if (prediction) {
         df <- old[[i]][, 1:2]
+
+        # get previous column names
+        oldnames <- colnames(old[[i]])[1:2]
       } else {
         df <- old[[i]][, 1]
-      }
 
-      # get previous column names
-      oldnames <- colnames(df)
+        # get previous column names
+        oldnames <- colnames(old[[i]])[1]
+      }
 
       for (j in seq_along(key[[i]])) {
         covname <- names(key[[i]])[[j]]
