@@ -1210,7 +1210,7 @@ simulate_intervention <-
 
           # if covariate is part of visit process draw values only at visits
           if (!is.null(visit_fit)) {
-            if (!covs[[j]] %in% visit_covs) {
+            if (covs[[j]] %in% visit_covs) {
               visit_rows <- which(sim[[visit]] == 1)
               ndraws <- length(visit_rows)
             }
