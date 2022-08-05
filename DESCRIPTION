@@ -16,9 +16,10 @@ Config/testthat/edition: 3
 URL: http://christopherbboyer.com/gmethods/
 Imports: 
     boot,
-    data.table,
     nnet,
     pscl,
     stats,
     truncnorm,
     truncreg
+Depends: 
+    data.table
