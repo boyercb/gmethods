@@ -152,8 +152,8 @@ gformula <- function(outcome_model,
   data <- data[rows, ]
 
   # create and document any history variables
-  if (any(grepl("(^lag[0-9]+_)|(cumavg_)|(cumsum_)", covs))) {
-    histories <- covs[grepl("(^lag[0-9]+_)|(cumavg_)|(cumsum_)", covs)]
+  if (any(grepl("(^lag[0-9]+_)|(cumavg_)|(cumsum_)|(^ts_)", covs))) {
+    histories <- covs[grepl("(^lag[0-9]+_)|(cumavg_)|(cumsum_)|(^ts_)", covs)]
 
     histories_to_add <- histories[!histories %in% colnames(data)]
 
@@ -163,6 +163,7 @@ gformula <- function(outcome_model,
 
     lagged_histories <- colnames(data)[grepl("^lag[0-9]+_", colnames(data))]
     cumulative_histories <- colnames(data)[grepl("(^cumavg_)|(^cumsum_)", colnames(data))]
+    ts_histories <- colnames(data)[grepl("^ts_", colnames(data))]
   }
 
   # Fit outcome model
@@ -224,6 +225,7 @@ gformula <- function(outcome_model,
     covs_tv = covs_tv,
     lagged_histories = lagged_histories,
     cumulative_histories = cumulative_histories,
+    ts_histories = ts_histories,
     restrictions = restrictions
   )
 
@@ -883,6 +885,7 @@ run_gformula <- function (
   covs_tv <- gformula$covs_tv
   lagged_histories <- gformula$lagged_histories
   cumulative_histories <- gformula$cumulative_histories
+  ts_histories <- gformula$ts_histories
   restrictions <- gformula$restrictions
 
   if (is.null(newdata)) {
@@ -1007,6 +1010,7 @@ run_gformula <- function (
           visit_covs,
           lagged_histories,
           cumulative_histories,
+          ts_histories,
           covariate_range,
           outcome_range,
           compevent_range,
@@ -1112,6 +1116,7 @@ run_gformula <- function (
 #' @param visit_covs
 #' @param lagged_histories
 #' @param cumulative_histories
+#' @param ts_histories
 #' @param covariate_range
 #' @param outcome_range
 #' @param compevent_range
@@ -1140,6 +1145,7 @@ simulate_intervention <-
            visit_covs,
            lagged_histories,
            cumulative_histories,
+           ts_histories,
            covariate_range,
            outcome_range,
            compevent_range,
@@ -1199,6 +1205,19 @@ simulate_intervention <-
               data = sim
             )
           )
+
+          # if covariate is part of cumulative history update
+          if (visit %in% gsub("^cumsum_", "", cumulative_histories)) {
+            update_cumulative_histories(sim, sims, paste0("cumsum_", visit))
+          }
+          if (visit %in% gsub("^cumavg_", "", cumulative_histories)) {
+            update_cumulative_histories(sim, sims, paste0("cumavg_", visit))
+          }
+
+          # if covariate is part of time since history update
+          if (visit %in% gsub("^ts_", "", ts_histories)) {
+            update_ts_histories(sim, paste0("ts_", visit))
+          }
         }
 
         # draw new covariate values
@@ -1418,8 +1437,14 @@ simulate_intervention <-
           # if covariate is part of cumulative history update
           if (covs[[j]] %in% gsub("^cumsum_", "", cumulative_histories)) {
             update_cumulative_histories(sim, sims, paste0("cumsum_", covs[[j]]))
-          } else if (covs[[j]] %in% gsub("^cumavg_", "", cumulative_histories)) {
+          }
+          if (covs[[j]] %in% gsub("^cumavg_", "", cumulative_histories)) {
             update_cumulative_histories(sim, sims, paste0("cumavg_", covs[[j]]))
+          }
+
+          # if covariate is part of time since history update
+          if (covs[[j]] %in% gsub("^ts_", "", ts_histories)) {
+            update_ts_histories(sim, paste0("ts_", covs[[j]]))
           }
         }
       }

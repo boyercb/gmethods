@@ -12,6 +12,10 @@ make_histories <- function(data, id, variables) {
   lagged_vals <- gsub("^lag", "", unlist(regmatches(lagged_vars, regexec("^lag[0-9]+", lagged_vars))))
   lagged_vals <- as.list(as.numeric(lagged_vals))
 
+  ts_vars <- gsub("^lag[0-9]+_", "", variables)
+  ts_vars <- unique(ts_vars[grepl("ts_", ts_vars)])
+  ts_targets <- gsub("ts_", "", ts_vars)
+
   # TODO: enforce having all lags below maximum encountered
   if (length(cumsum_vars) > 0) {
     data[, (cumsum_vars) := lapply(.SD, cumsum), by = id, .SDcols = cumsum_targets]
@@ -20,6 +24,14 @@ make_histories <- function(data, id, variables) {
   if (length(cumavg_vars) > 0) {
     data[, (cumavg_vars) := lapply(.SD, function(x)
         cumsum(x) / (1:.N)), by = id, .SDcols = cumavg_targets]
+  }
+
+  if (length(ts_vars) > 0) {
+    data[, (ts_vars) := lapply(.SD, cumsum), by = id, .SDcols = ts_targets]
+
+    for (j in seq_along(ts_vars)) {
+      data[, (ts_vars[j]) := 1:.N - 1, by = c(id, ts_vars[j])]
+    }
   }
 
   if (length(lagged_vars) > 0) {
@@ -71,6 +83,19 @@ update_cumulative_histories <- function(sim, sims, variable) {
   } else {
     set(sim, j = variable, value = (sim[[target]] + cumulative) / (length(sims) + 1))
   }
+}
+
+update_ts_histories <- function(data, variable) {
+
+  # extract lagged variables from histories
+  target <- gsub("^ts_", "", variable)
+
+  # update
+  set(data,
+      j = variable,
+      value = ifelse(data[[target]] == 1, 0, data[[variable]] + 1)
+  )
+
 }
 
 update_lagged_histories <- function(data, histories) {
@@ -210,8 +235,6 @@ calc_np_means <-
     } else {
       # set weights to one for everyone
       dt[, .w := 1]
-
-
 
     }
 

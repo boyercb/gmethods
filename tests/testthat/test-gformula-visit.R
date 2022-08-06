@@ -299,7 +299,7 @@ gf <- gformula(
   ),
   visit_model = list(
     formula = visit ~ drug + lcd4_0 + lwbc_0 + lag1_proph + lag1_lcd4 +
-      lag1_lwbc + lag1_cumavg_pcp_new + log(week + 1),
+      lag1_lwbc + lag1_cumavg_pcp_new + ts_visit,
     link = "logit",
     family = "binomial",
     covariates = c("pcp_new", "lwbc", "lcd4", "proph")
