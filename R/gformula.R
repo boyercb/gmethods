@@ -1692,7 +1692,7 @@ bootstrap_simulations <- function (uids,
     covs_baseline = gformula$covs_baseline,
     covs_tv = gformula$covs_tv
   )
-  print(bgf$fit$visit)
+
   # re-simulate interventions
   sim_results <- run_gformula(
     gformula = bgf,
