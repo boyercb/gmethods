@@ -323,6 +323,14 @@ simulate.gformula <- function(object,
     stop_time <- object$stop_time
   }
 
+  rows <- which(object$data[[object$time]] >= start_time & object$data[[object$time]] <= stop_time)
+  object$data <- object$data[rows, ]
+
+  if (!is.null(newdata)) {
+    rows <- which(newdata[[object$time]] >= start_time & newdata[[object$time]] <= stop_time)
+    newdata <- newdata[rows, ]
+  }
+
   if (!reference %in% names(interventions)) {
     stop("Reference intervention must correspond to named intervention.")
   }
@@ -552,6 +560,14 @@ predict.gformula <- function(object,
 
   if (is.null(stop_time)) {
     stop_time <- object$stop_time
+  }
+
+  rows <- which(object$data[[object$time]] >= start_time & object$data[[object$time]] <= stop_time)
+  object$data <- object$data[rows, ]
+
+  if (!is.null(newdata)) {
+    rows <- which(newdata[[object$time]] >= start_time & newdata[[object$time]] <= stop_time)
+    newdata <- newdata[rows, ]
   }
 
   # add natural course to intervention list
