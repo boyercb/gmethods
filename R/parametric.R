@@ -412,11 +412,18 @@ fit_covariate_model <- function(model, data, time = "time", start_time = 0, gam 
   subdata <- data[rows, ]
 
   if (!is.null(model$subset)) {
-    subdata <- subset(subdata, eval(parse(text = model$subset)))
+    if (!is.null(model$restrict)) {
+      subsetstr <- paste0("(", model$restrict, ") & (", model$subset, ")")
+      subdata <- subset(subdata, eval(parse(text = subsetstr)))
+    } else {
+      subdata <- subset(subdata, eval(parse(text = model$subset)))
+    }
+  } else {
+    if (!is.null(model$restrict)) {
+      subdata <- subset(subdata, eval(parse(text = model$restrict$subset)))
+    }
   }
-  if (!is.null(model$restrict)) {
-    subdata <- subset(subdata, eval(parse(text = model$restrict$subset)))
-  }
+
 
   if (gam) {
     fit <- switch(

@@ -99,17 +99,30 @@ gformula <- function(outcome_model,
       visit_covs <- names(covariate_model)
     }
 
+    # add visit restriction to covariates in visit process
     covariate_model[names(covariate_model) %in% visit_covs] <-
       lapply(
         covariate_model[names(covariate_model) %in% visit_covs],
         function(object) {
-          object$restrict <- list(
-            subset = paste0(visit, " == 1")
-          )
+          if (is.null(object$subset)) {
+            object$subset <- paste0(visit, " == 1")
+          } else {
+            object$subset <- paste0("(", object$subset, ") & ", visit, " == 1")
+          }
           return(object)
       })
+
+    # get restrictions on visit process
+    if (exists(visit_model, x = "restrict")) {
+      visit_restrictions <- get(visit_model, x = "restrict")
+    } else {
+      visit_restrictions <- NULL
+    }
+
+
   } else {
     visit_covs <- NULL
+    visit_restrictions <- NULL
   }
 
   # get covariate restrictions
@@ -120,8 +133,6 @@ gformula <- function(outcome_model,
       NULL
     }
   })
-
-
 
   # get list of all covariates that appear in model formulas (both dependent and
   # independent)
@@ -226,7 +237,8 @@ gformula <- function(outcome_model,
     lagged_histories = lagged_histories,
     cumulative_histories = cumulative_histories,
     ts_histories = ts_histories,
-    restrictions = restrictions
+    restrictions = restrictions,
+    visit_restrictions = visit_restrictions
   )
 
   class(ret) <- "gformula"
@@ -903,6 +915,7 @@ run_gformula <- function (
   cumulative_histories <- gformula$cumulative_histories
   ts_histories <- gformula$ts_histories
   restrictions <- gformula$restrictions
+  visit_restrictions <- gformula$visit_restrictions
 
   if (is.null(newdata)) {
     data <- gformula$data
@@ -1031,6 +1044,7 @@ run_gformula <- function (
           outcome_range,
           compevent_range,
           restrictions,
+          visit_restrictions,
           bound_sims,
           return_sims,
           return_covs,
@@ -1137,6 +1151,7 @@ run_gformula <- function (
 #' @param outcome_range
 #' @param compevent_range
 #' @param restrictions
+#' @param visit_restrictions
 #' @param bound_sims
 #' @param return_sims
 #' @param return_covs
@@ -1166,6 +1181,7 @@ simulate_intervention <-
            outcome_range,
            compevent_range,
            restrictions,
+           visit_restrictions,
            bound_sims,
            return_sims,
            return_covs,
@@ -1233,6 +1249,13 @@ simulate_intervention <-
           # if covariate is part of time since history update
           if (visit %in% gsub("^ts_", "", ts_histories)) {
             update_ts_histories(sim, paste0("ts_", visit))
+          }
+
+          if (!is.null(visit_restrictions)) {
+            if (exists(visit_restrictions, x = "otherwise")) {
+              rows <- with(sim, !eval(parse(text = visit_restrictions$subset)))
+              sim[[visit]][rows] <- visit_restrictions$otherwise
+            }
           }
         }
 
