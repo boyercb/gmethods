@@ -932,8 +932,8 @@ run_gformula <- function (
   visit_fit <- gformula$fit$visit
 
   # local variables
-  uids <- unique(data[[id]])
-  utimes <- unique(data[[time]])
+  uids <- unique(gformula$data[[id]])
+  utimes <- unique(gformula$data[[time]])
 
   # collect variable names
   covs <- names(covariate_fit)
