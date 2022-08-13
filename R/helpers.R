@@ -174,18 +174,42 @@ get_bootstrap_ci <- function(t, t0, conf_level, conf_type) {
   if (grepl("^norm", conf_type)) {
     if (length(dim(t)) < 2L) {
       se <- sd(t, na.rm = TRUE)
-      bias <- mean(t, na.rm = TRUE) - t0
     } else {
       se <- colSds(t, na.rm = TRUE)
-      # print(dim(t))
-      # print(t[, which(is.nan(se))[1:10]])
-      bias <- colMeans(t, na.rm = TRUE) - t0
     }
 
     estimate <- t0
-    conf.low <- estimate - bias - se * qnorm((1 + conf_level) / 2)
-    conf.high <- estimate - bias + se * qnorm((1 + conf_level) / 2)
+    conf.low <- estimate - se * qnorm((1 + conf_level) / 2)
+    conf.high <- estimate + se * qnorm((1 + conf_level) / 2)
+
   } else if (grepl("^perc", conf_type)) {
+    if (length(dim(t)) < 2L) {
+      ll <- quantile(t, probs = (1 - conf_level) / 2, na.rm = TRUE)
+      ul <- quantile(t, probs = (1 + conf_level) / 2, na.rm = TRUE)
+    } else {
+      ll <-
+        apply(t, 2, function(x)
+          quantile(x, probs = (1 - conf_level) / 2, na.rm = TRUE))
+      ul <- apply(t, 2, function(x)
+        quantile(x, probs = (1 + conf_level) / 2, na.rm = TRUE))
+    }
+
+    estimate <- t0
+    conf.low <- ll
+    conf.high <- ul
+
+  } else if (grepl("^bias", conf_type)) {
+    if (length(dim(t)) < 2L) {
+      se <- sd(t, na.rm = TRUE)
+      bias <- mean(t, na.rm = TRUE) - t0
+    } else {
+      se <- colSds(t, na.rm = TRUE)
+      bias <- colMeans(t, na.rm = TRUE) - t0
+    }
+
+    estimate <- t0 - bias
+    conf.low <- estimate - se * qnorm((1 + conf_level) / 2)
+    conf.high <- estimate + se * qnorm((1 + conf_level) / 2)
 
   }
 
