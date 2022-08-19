@@ -1215,6 +1215,22 @@ simulate_intervention <-
         # initialize current sim
         sim <- copy(sims[[i]])
 
+        # intervene on treatment variables
+        if (is.function(intervention)) {
+          if (!prediction) {
+            intervention(sim, k)
+          } else {
+            # predictions are assumed to be conditional on values at start time
+            # TODO: think about whether this needs to be imposed or just explained
+            if (k > start_time) {
+              intervention(sim, k)
+            }
+          }
+
+        } else if (intervention != "natural course") {
+          stop(paste("Error don't know what to do with intervention:", intervention))
+        }
+
       } else {
         # set initial values of sim to previous
         sim <- copy(sims[[i - 1]])
@@ -1473,6 +1489,22 @@ simulate_intervention <-
             }
           }
 
+          # intervene on treatment variables
+          if (is.function(intervention)) {
+            if (!prediction) {
+              intervention(sim, k)
+            } else {
+              # predictions are assumed to be conditional on values at start time
+              # TODO: think about whether this needs to be imposed or just explained
+              if (k > start_time) {
+                intervention(sim, k)
+              }
+            }
+
+          } else if (intervention != "natural course") {
+            stop(paste("Error don't know what to do with intervention:", intervention))
+          }
+
           # if covariate is part of cumulative history update
           if (covs[[j]] %in% gsub("^cumsum_", "", cumulative_histories)) {
             update_cumulative_histories(sim, sims, paste0("cumsum_", covs[[j]]))
@@ -1486,22 +1518,6 @@ simulate_intervention <-
             update_ts_histories(sim, paste0("ts_", covs[[j]]))
           }
         }
-      }
-
-      # intervene on treatment variables
-      if (is.function(intervention)) {
-        if (!prediction) {
-          intervention(sim, k)
-        } else {
-          # predictions are assumed to be conditional on values at start time
-          # TODO: think about whether this needs to be imposed or just explained
-          if (k > start_time) {
-            intervention(sim, k)
-          }
-        }
-
-      } else if (intervention != "natural course") {
-        stop(paste("Error don't know what to do with intervention:", intervention))
       }
 
       # Predict outcome value at time t using parametric models
