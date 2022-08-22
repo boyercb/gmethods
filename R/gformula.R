@@ -384,7 +384,7 @@ simulate.gformula <- function(object,
     if (object$fit$outcome$type == "survival") {
       # take only last time point for summary
       means <- lapply(boots$means, function(x) x[nrow(x), ])
-      t0 <- lapply(t0$means, function(x) x[length(x), ][[target]])
+      t0 <- lapply(t0$means, function(x) x[nrow(x), ][[target]])
       t <- lapply(t$means, function(x) x[, ncol(x)])
     } else {
       means <- boots$means
