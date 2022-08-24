@@ -235,7 +235,7 @@ calc_np_means <-
       censor <- as.character(formula(censor_fit)[2])
 
       # construct inverse probability of censoring weights
-      dt[, .pC := 1 - predict(censor_fit, type = "response")]
+      dt[, .pC := 1 - predict(censor_fit, newdata = dt, type = "response")]
       dt[, .pC := cumprod(.pC), by = c(id)]
       dt[, .w := 0][dt[[censor]] == 0, .w := 1 / .pC]
 
@@ -245,7 +245,7 @@ calc_np_means <-
 
         if (censor_compevent) {
           # construct inverse probability of censoring weights for competing event
-          dt[, .pD := 1 - predict(compevent_fit, type = "response")]
+          dt[, .pD := 1 - predict(compevent_fit, newdata = dt, type = "response")]
           dt[, .pD := cumprod(.pD), by = c(id)]
           dt[, .wD := 0][dt[[compevent]] == 0 | is.na(dt[[compevent]]), .wD := 1 / .pD]
           dt[, .w := .w + .wD]
