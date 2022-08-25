@@ -1629,13 +1629,6 @@ simulate_intervention <-
     sims[, .w := 1]
 
     if (prediction) {
-      # calculate covariate means
-      if (return_covs) {
-        covs <- calc_obs_cov_means(covariate_fit, sims, id, time, by = c(id))
-      } else {
-        covs <- NULL
-      }
-
       # calculate predictions
       bylist <- c(id, time)
       if (outcome_fit$type == 'survival') {
@@ -1650,14 +1643,19 @@ simulate_intervention <-
         rows <- which(means[[time]] == stop_time)
         means <- means[rows, ]
       }
-    } else {
 
       # calculate covariate means
       if (return_covs) {
-        covs <- calc_obs_cov_means(covariate_fit, sims, id, time)
+        # if survival we want covariate means to be weighted by probability
+        # that simulated individual survives to interval
+        if (outcome_fit$type == 'survival') {
+          set(sims, j = '.w', value = 1 - poprisk)
+        }
+        covs <- calc_obs_cov_means(covariate_fit, sims, id, time, by = c(id))
       } else {
         covs <- NULL
       }
+    } else {
 
       # calculate outcome means
       if (outcome_fit$type == 'survival') {
@@ -1672,6 +1670,17 @@ simulate_intervention <-
         means <- means[rows, ]
       }
 
+      # calculate covariate means
+      if (return_covs) {
+        # if survival we want covariate means to be weighted by probability
+        # that simulated individual survives to interval
+        if (outcome_fit$type == 'survival') {
+          set(sims, j = '.w', value = 1 - sims[['poprisk']])
+        }
+        covs <- calc_obs_cov_means(covariate_fit, sims, id, time)
+      } else {
+        covs <- NULL
+      }
     }
 
     if (!return_sims) {
@@ -1679,6 +1688,9 @@ simulate_intervention <-
     } else {
       # sort in proper order
       setorderv(sims, c(id, '.sid', time, '.sim'))
+
+      # remove weights
+      sims[['.w']] <- NULL
     }
 
     return(
