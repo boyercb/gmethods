@@ -172,9 +172,9 @@ gformula <- function(outcome_model,
       make_histories(data, id, histories_to_add)
     }
 
-    lagged_histories <- colnames(data)[grepl("^lag[0-9]+_", colnames(data))]
-    cumulative_histories <- colnames(data)[grepl("(^cumavg_)|(^cumsum_)", colnames(data))]
-    ts_histories <- colnames(data)[grepl("^ts_", colnames(data))]
+    lagged_histories <- histories[grepl("^lag[0-9]+_", histories)]
+    cumulative_histories <- histories[grepl("(^cumavg_)|(^cumsum_)", histories)]
+    ts_histories <- histories[grepl("^ts_", histories)]
   }
 
   # Fit outcome model
@@ -234,6 +234,7 @@ gformula <- function(outcome_model,
     visit_covs = visit_covs,
     covs_baseline = covs_baseline,
     covs_tv = covs_tv,
+    all_vars = covs,
     lagged_histories = lagged_histories,
     cumulative_histories = cumulative_histories,
     ts_histories = ts_histories,
@@ -911,6 +912,7 @@ run_gformula <- function (
   time <- gformula$time
   covs_baseline <- gformula$covs_baseline
   covs_tv <- gformula$covs_tv
+  all_vars <- gformula$all_vars
   lagged_histories <- gformula$lagged_histories
   cumulative_histories <- gformula$cumulative_histories
   ts_histories <- gformula$ts_histories
@@ -923,6 +925,7 @@ run_gformula <- function (
     data <- newdata
 
     # maybe add some error checking here!
+    # e.g. check new data has all necessary vars
   }
 
   covariate_fit <- gformula$fit$covariate
@@ -989,6 +992,10 @@ run_gformula <- function (
   # initialize data for data.table
   rows <- which(data[[time]] == start_time)
   dt <- data[rows, ]
+  if (any(!colnames(data) %in% unique(c(id, time, all_vars)))) {
+    cols <- colnames(data)[!colnames(data) %in% unique(c(id, time, all_vars))]
+    dt[, (cols) := NULL]
+  }
 
   # add hidden ordering variable
   obs <- nrow(dt)
