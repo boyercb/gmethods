@@ -340,6 +340,12 @@ simulate.gformula <- function(object,
   object$data <- object$data[rows, ]
 
   if (!is.null(newdata)) {
+    if (!is.data.table(newdata)) {
+      newdata <- as.data.table(newdata)
+    } else {
+      newdata <- copy(newdata)
+    }
+
     rows <- which(newdata[[object$time]] >= start_time & newdata[[object$time]] <= stop_time)
     newdata <- newdata[rows, ]
   }
@@ -579,6 +585,12 @@ predict.gformula <- function(object,
   object$data <- object$data[rows, ]
 
   if (!is.null(newdata)) {
+    if (!is.data.table(newdata)) {
+      newdata <- as.data.table(newdata)
+    } else {
+      newdata <- copy(newdata)
+    }
+
     rows <- which(newdata[[object$time]] >= start_time & newdata[[object$time]] <= stop_time)
     newdata <- newdata[rows, ]
   }
