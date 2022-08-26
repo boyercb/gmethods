@@ -1769,7 +1769,7 @@ bootstrap_simulations <- function (uids,
   sim_results <- run_gformula(
     gformula = bgf,
     newdata = if (!prediction) {
-      if (is.null(newdata)) NULL else newdata[ind]
+      if (is.null(newdata)) NULL else newdata #newdata[ind]
     } else {
       if (is.null(newdata)) gformula$data else newdata
     },
