@@ -945,6 +945,8 @@ run_gformula <- function (
     compevent <- NULL
   }
 
+  censor_compevent <- gformula$censor_compevent
+
   if (!is.list(interventions)) {
     interventions <- list(interventions)
   }
@@ -1043,6 +1045,7 @@ run_gformula <- function (
           covariate_range,
           outcome_range,
           compevent_range,
+          censor_compevent,
           restrictions,
           visit_restrictions,
           bound_sims,
@@ -1150,6 +1153,7 @@ run_gformula <- function (
 #' @param covariate_range
 #' @param outcome_range
 #' @param compevent_range
+#' @param censor_compevent
 #' @param restrictions
 #' @param visit_restrictions
 #' @param bound_sims
@@ -1180,6 +1184,7 @@ simulate_intervention <-
            covariate_range,
            outcome_range,
            compevent_range,
+           censor_compevent,
            restrictions,
            visit_restrictions,
            bound_sims,
@@ -1529,7 +1534,7 @@ simulate_intervention <-
         )
 
         # Predict competing event probabilities
-        if (!is.null(compevent)) {
+        if (!is.null(compevent) & !censor_compevent) {
           set(
             sim,
             j = 'Pd',
