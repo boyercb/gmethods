@@ -1654,7 +1654,7 @@ simulate_intervention <-
         # if survival we want covariate means to be weighted by probability
         # that simulated individual survives to interval
         if (outcome_fit$type == 'survival') {
-          set(sims, j = '.w', value = 1 - poprisk)
+          set(sims, j = '.w', value = 1 - sims[['poprisk']])
         }
         covs <- calc_obs_cov_means(covariate_fit, sims, id, time, by = c(id))
       } else {
