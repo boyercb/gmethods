@@ -134,6 +134,14 @@ gformula <- function(outcome_model,
     }
   })
 
+  restrict_covs <- lapply(covariate_model, function(object) {
+    if (exists(object, x = "restrict")) {
+      all.vars(parse(text = object$restrict$subset))
+    } else {
+      NULL
+    }
+  })
+
   # get list of all covariates that appear in model formulas (both dependent and
   # independent)
   covs <- lapply(
@@ -150,7 +158,8 @@ gformula <- function(outcome_model,
       NULL
     }
   })
-  covs <- unique(unlist(covs))
+
+  covs <- unique(unlist(c(covs, restrict_covs)))
 
   if (!is.data.table(data)) {
     data <- as.data.table(data)
